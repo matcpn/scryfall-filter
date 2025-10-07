@@ -1,3 +1,22 @@
+.sortable#sort-edhrec, .sortable#sort-edhrec span {
+  min-width: 70px;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+}
+.sortable span {
+  font-size: 0.9em;
+  margin-left: 2px;
+}
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.owned-row {
+  background-color: #2e4a2e !important;
+  /* greenish highlight for owned cards */
+}
 body {
   font-family: "Inter", system-ui, sans-serif;
   background-color: #1a1a1a;

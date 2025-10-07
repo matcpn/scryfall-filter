@@ -2,6 +2,8 @@ let allCards = [];
 let filteredCards = [];
 let moxfieldNames = new Set();
 
+let currentSort = { field: null, asc: true };
+
 $(document).ready(function () {
   $("#searchForm").on("submit", function (e) {
     e.preventDefault();
@@ -17,6 +19,14 @@ $(document).ready(function () {
     const url = `https://api.scryfall.com/cards/search?q=${encoded}&order=edhrec&as=checklist&unique=cards`;
 
     fetchScryfall(url);
+  });
+
+  // Sorting handlers
+  $(document).on("click", "#sort-edhrec", function () {
+    sortByField("edhrec_rank");
+  });
+  $(document).on("click", "#sort-usd", function () {
+    sortByField("usd");
   });
 
   $("#csvFile").on("change", function (e) {
@@ -42,12 +52,51 @@ $(document).ready(function () {
       alert("Upload a Moxfield CSV first.");
       return;
     }
-    filteredCards = allCards.filter((card) =>
-      moxfieldNames.has(card.name.toLowerCase())
-    );
-    renderTable(filteredCards);
+    // Instead of filtering, just highlight owned cards
+    renderTable(allCards);
   });
 });
+
+// Sort and re-render table
+function sortByField(field) {
+  let arr = allCards.slice();
+  let asc = true;
+  if (currentSort.field === field) {
+    asc = !currentSort.asc;
+  }
+  currentSort = { field, asc };
+
+  arr.sort((a, b) => {
+    let aVal, bVal;
+    if (field === "edhrec_rank") {
+      aVal = a.edhrec_rank || Infinity;
+      bVal = b.edhrec_rank || Infinity;
+    } else if (field === "usd") {
+      aVal = parseFloat(a.prices?.usd) || 0;
+      bVal = parseFloat(b.prices?.usd) || 0;
+    } else {
+      aVal = a[field];
+      bVal = b[field];
+    }
+    if (aVal === bVal) return 0;
+    return asc ? aVal - bVal : bVal - aVal;
+  });
+  updateSortArrows();
+  renderTable(arr);
+}
+
+function updateSortArrows() {
+  // Clear all arrows
+  $("#arrow-edhrec").text("");
+  $("#arrow-usd").text("");
+  // Set arrow for current sort
+  if (currentSort.field === "edhrec_rank") {
+    $("#arrow-edhrec").text(currentSort.asc ? "▲" : "▼");
+  } else if (currentSort.field === "usd") {
+    $("#arrow-usd").text(currentSort.asc ? "▲" : "▼");
+  }
+}
+
 
 function fetchScryfall(url) {
   $.getJSON(url, function (data) {
@@ -57,7 +106,10 @@ function fetchScryfall(url) {
       fetchScryfall(data.next_page);
     } else {
       $("#loading").hide();
-      renderTable(allCards);
+      // Default sort by EDHREC ascending
+      currentSort = { field: "edhrec_rank", asc: true };
+      sortByField("edhrec_rank");
+      sortByField("edhrec_rank");
     }
   }).fail(() => {
     $("#loading").hide();
@@ -75,19 +127,23 @@ function renderTable(cards) {
   }
 
   cards.forEach((card) => {
+    if (!card.edhrec_rank) return; // skip cards with blank edhrec_rank
     const prices = card.prices || {};
     const manaHTML = parseManaCost(card.mana_cost);
+    const owned = moxfieldNames.has(card.name.toLowerCase());
+    const edhrec = card.edhrec_rank ? card.edhrec_rank : "";
+    const usd = prices.usd ? "$" + prices.usd : "";
     const row = `
-      <tr>
+      <tr${owned ? ' class="owned-row"' : ''}>
         <td>${card.set.toUpperCase()}</td>
         <td>${card.collector_number}</td>
         <td><a href="${card.scryfall_uri}" target="_blank">${card.name}</a></td>
         <td>${manaHTML}</td>
         <td>${card.type_line || ""}</td>
         <td>${card.rarity ? card.rarity[0].toUpperCase() : ""}</td>
-        <td>${prices.usd ? "$" + prices.usd : ""}</td>
+        <td>${edhrec}</td>
+        <td>${usd}</td>
         <td>${prices.eur ? "€" + prices.eur : ""}</td>
-        <td>${prices.tix || ""}</td>
       </tr>`;
     tbody.append(row);
   });
