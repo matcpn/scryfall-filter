@@ -5,16 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scryfall Collection Filter</title>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css">
+  <script src="https://cdn.datatables.net/2.0.3/js/dataTables.min.js"></script>
   <script defer src="script.js"></script>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: system-ui, sans-serif;
       background: #f4f4f4;
       color: #333;
+      padding: 2em;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2em;
     }
     .container {
       background: white;
@@ -22,10 +24,7 @@
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       width: 100%;
-      max-width: 500px;
-    }
-    input {
-      margin: 0.5em 0;
+      max-width: 1100px;
     }
     button {
       margin-top: 1em;
@@ -38,16 +37,51 @@
       cursor: pointer;
     }
     button:hover { background: #2563eb; }
+    table {
+      margin-top: 2em;
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 0.5em 0.75em;
+      text-align: left;
+    }
+    tr:nth-child(even) { background-color: #fafafa; }
+    th {
+      background-color: #3b82f6;
+      color: white;
+    }
+    #status { margin-top: 1em; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Scryfall ↔ Moxfield Filter</h1>
-    <p>Upload your <strong>Scryfall export</strong> and <strong>Moxfield collection</strong> CSVs.</p>
+    <p>Upload your Scryfall and Moxfield CSVs to display your owned cards.</p>
     <input type="file" id="scryfallFile" accept=".csv" /><br />
     <input type="file" id="moxfieldFile" accept=".csv" /><br />
-    <button id="processBtn">Generate Filtered CSV</button>
+    <button id="processBtn">Show Owned Cards</button>
     <p id="status"></p>
+
+    <table id="cardsTable" class="display" style="display:none;">
+      <thead>
+        <tr>
+          <th>SET</th>
+          <th>№</th>
+          <th>NAME</th>
+          <th>COST</th>
+          <th>TYPE</th>
+          <th>R</th>
+          <th>LA</th>
+          <th>ARTIST</th>
+          <th>USD</th>
+          <th>EUR</th>
+          <th>TIX</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 </body>
 </html>
+
