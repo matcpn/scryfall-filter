@@ -10,7 +10,6 @@ document.getElementById("processBtn").addEventListener("click", () => {
 
   status.textContent = "Processing...";
 
-  // Parse both CSVs
   Papa.parse(scryfallFile, {
     header: true,
     complete: (scryfallResults) => {
@@ -20,29 +19,49 @@ document.getElementById("processBtn").addEventListener("click", () => {
           const scryfall = scryfallResults.data;
           const moxfield = moxfieldResults.data;
 
-          // Build quick lookup set
           const owned = new Set(
             moxfield.map(m => `${m["Name"]?.trim()?.toLowerCase()}|${m["Collector Number"]?.trim()}`)
           );
 
-          // Filter
           const filtered = scryfall.filter(s => 
             owned.has(`${s["name"]?.trim()?.toLowerCase()}|${s["collector_number"]?.trim()}`)
           );
 
-          // Convert back to CSV
-          const csv = Papa.unparse(filtered);
+          if (filtered.length === 0) {
+            status.textContent = "No matches found.";
+            return;
+          }
 
-          // Download link
-          const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "scryfall_filtered.csv";
-          a.click();
-          URL.revokeObjectURL(url);
+          status.textContent = `Found ${filtered.length} owned cards.`;
 
-          status.textContent = `Done! ${filtered.length} cards matched.`;
+          const tableBody = document.querySelector("#cardsTable tbody");
+          tableBody.innerHTML = "";
+
+          filtered.forEach(card => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${card.set || ""}</td>
+              <td>${card.collector_number || ""}</td>
+              <td><a href="${card.scryfall_uri}" target="_blank">${card.name || ""}</a></td>
+              <td>${card.mana_cost || ""}</td>
+              <td>${card.type_line || ""}</td>
+              <td>${card.rarity?.toUpperCase() || ""}</td>
+              <td>${card.lang?.toUpperCase() || ""}</td>
+              <td>${card.artist || ""}</td>
+              <td>${card.usd_price ? "$" + card.usd_price : ""}</td>
+              <td>${card.eur_price ? "€" + card.eur_price : ""}</td>
+              <td>${card.tix_price || ""}</td>
+            `;
+            tableBody.appendChild(row);
+          });
+
+          document.getElementById("cardsTable").style.display = "table";
+
+          // Initialize DataTable (sortable/searchable)
+          if ($.fn.dataTable.isDataTable("#cardsTable")) {
+            $("#cardsTable").DataTable().clear().destroy();
+          }
+          new DataTable("#cardsTable");
         }
       });
     }
