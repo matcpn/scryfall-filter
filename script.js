@@ -15,10 +15,13 @@ $(document).ready(function () {
     allCards = [];
     filteredCards = [];
 
-    const encoded = encodeURIComponent(query);
-    const url = `https://api.scryfall.com/cards/search?q=${encoded}&order=edhrec&as=checklist&unique=cards`;
+  const encoded = encodeURIComponent(query);
+  const url = `https://api.scryfall.com/cards/search?q=${encoded}&order=edhrec&as=checklist&unique=cards`;
 
-    fetchScryfall(url);
+  scryfallPageCount = 0;
+  scryfallPagesFetched = 0;
+  currentSort = { field: "edhrec_rank", asc: true };
+  fetchScryfall(url);
   });
 
   // Sorting handlers
@@ -98,21 +101,35 @@ function updateSortArrows() {
 }
 
 
+let scryfallPageCount = 0;
+let scryfallPagesFetched = 0;
+
 function fetchScryfall(url) {
   $.getJSON(url, function (data) {
+    if (scryfallPageCount === 0 && data.total_cards) {
+      // Estimate total pages from first response
+      scryfallPageCount = Math.ceil(data.total_cards / data.data.length);
+    }
     allCards = allCards.concat(data.data);
+    scryfallPagesFetched++;
+    // Show progress
+    if (scryfallPageCount > 1) {
+      $("#loading").text(`Loading... (${scryfallPagesFetched}/${scryfallPageCount} pages)`);
+    }
+    // Render as we go
+    sortByField(currentSort.field || "edhrec_rank");
 
     if (data.has_more) {
       fetchScryfall(data.next_page);
     } else {
       $("#loading").hide();
-      // Default sort by EDHREC ascending
-      currentSort = { field: "edhrec_rank", asc: true };
-      sortByField("edhrec_rank");
-      sortByField("edhrec_rank");
+      scryfallPageCount = 0;
+      scryfallPagesFetched = 0;
     }
   }).fail(() => {
     $("#loading").hide();
+    scryfallPageCount = 0;
+    scryfallPagesFetched = 0;
     alert("Failed to fetch results. Check your query syntax.");
   });
 }
