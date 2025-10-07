@@ -1,69 +1,81 @@
-document.getElementById("processBtn").addEventListener("click", () => {
-  const scryfallFile = document.getElementById("scryfallFile").files[0];
+async function fetchAllPages(url) {
+  let allCards = [];
+  while (url) {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.object !== "list") throw new Error("Invalid response from Scryfall");
+    allCards = allCards.concat(data.data);
+    url = data.has_more ? data.next_page : null;
+  }
+  return allCards;
+}
+
+document.getElementById("fetchBtn").addEventListener("click", async () => {
+  const query = document.getElementById("queryInput").value.trim();
   const moxfieldFile = document.getElementById("moxfieldFile").files[0];
   const status = document.getElementById("status");
+  const table = document.getElementById("cardsTable");
 
-  if (!scryfallFile || !moxfieldFile) {
-    status.textContent = "Please upload both CSV files.";
+  if (!query) {
+    status.textContent = "Please enter a Scryfall query.";
+    return;
+  }
+  if (!moxfieldFile) {
+    status.textContent = "Please upload your Moxfield CSV.";
     return;
   }
 
-  status.textContent = "Processing...";
+  status.textContent = "Fetching Scryfall data...";
+  const encoded = encodeURIComponent(query);
+  const baseUrl = `https://api.scryfall.com/cards/search?q=${encoded}&order=name&as=checklist&unique=cards`;
 
-  Papa.parse(scryfallFile, {
-    header: true,
-    complete: (scryfallResults) => {
-      Papa.parse(moxfieldFile, {
-        header: true,
-        complete: (moxfieldResults) => {
-          const scryfall = scryfallResults.data;
-          const moxfield = moxfieldResults.data;
+  try {
+    const cards = await fetchAllPages(baseUrl);
+    status.textContent = `Fetched ${cards.length} cards. Parsing Moxfield...`;
 
-          const owned = new Set(
-            moxfield.map(m => `${m["Name"]?.trim()?.toLowerCase()}|${m["Collector Number"]?.trim()}`)
-          );
+    Papa.parse(moxfieldFile, {
+      header: true,
+      complete: (moxfieldResults) => {
+        const moxfield = moxfieldResults.data;
+        const owned = new Set(
+          moxfield.map(m => `${m["Name"]?.trim()?.toLowerCase()}|${m["Collector Number"]?.trim()}`)
+        );
 
-          const filtered = scryfall.filter(s => 
-            owned.has(`${s["name"]?.trim()?.toLowerCase()}|${s["collector_number"]?.trim()}`)
-          );
+        const filtered = cards.filter(c =>
+          owned.has(`${c.name?.trim()?.toLowerCase()}|${c.collector_number?.trim()}`)
+        );
 
-          if (filtered.length === 0) {
-            status.textContent = "No matches found.";
-            return;
-          }
+        status.textContent = `Found ${filtered.length} matching owned cards.`;
+        const tableBody = document.querySelector("#cardsTable tbody");
+        tableBody.innerHTML = "";
 
-          status.textContent = `Found ${filtered.length} owned cards.`;
+        filtered.forEach(card => {
+          const price = card.prices || {};
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${card.set.toUpperCase()}</td>
+            <td>${card.collector_number}</td>
+            <td><a href="${card.scryfall_uri}" target="_blank">${card.name}</a></td>
+            <td>${card.mana_cost || ""}</td>
+            <td>${card.type_line || ""}</td>
+            <td>${card.rarity?.toUpperCase() || ""}</td>
+            <td>${card.artist || ""}</td>
+            <td>${price.usd ? "$" + price.usd : ""}</td>
+            <td>${price.eur ? "€" + price.eur : ""}</td>
+            <td>${price.tix || ""}</td>
+          `;
+          tableBody.appendChild(row);
+        });
 
-          const tableBody = document.querySelector("#cardsTable tbody");
-          tableBody.innerHTML = "";
-
-          filtered.forEach(card => {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-              <td>${card.set || ""}</td>
-              <td>${card.collector_number || ""}</td>
-              <td><a href="${card.scryfall_uri}" target="_blank">${card.name || ""}</a></td>
-              <td>${card.mana_cost || ""}</td>
-              <td>${card.type_line || ""}</td>
-              <td>${card.rarity?.toUpperCase() || ""}</td>
-              <td>${card.lang?.toUpperCase() || ""}</td>
-              <td>${card.artist || ""}</td>
-              <td>${card.usd_price ? "$" + card.usd_price : ""}</td>
-              <td>${card.eur_price ? "€" + card.eur_price : ""}</td>
-              <td>${card.tix_price || ""}</td>
-            `;
-            tableBody.appendChild(row);
-          });
-
-          document.getElementById("cardsTable").style.display = "table";
-
-          // Initialize DataTable (sortable/searchable)
-          if ($.fn.dataTable.isDataTable("#cardsTable")) {
-            $("#cardsTable").DataTable().clear().destroy();
-          }
-          new DataTable("#cardsTable");
+        table.style.display = "table";
+        if ($.fn.dataTable.isDataTable("#cardsTable")) {
+          $("#cardsTable").DataTable().clear().destroy();
         }
-      });
-    }
-  });
+        new DataTable("#cardsTable");
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    status.textContent = "Error fetching data. Check console for details.";
+  }
 });
