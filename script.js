@@ -66,6 +66,7 @@ function sortByField(field) {
   let asc = true;
   if (currentSort.field === field) {
     asc = !currentSort.asc;
+
   }
   currentSort = { field, asc };
 
@@ -150,8 +151,10 @@ function renderTable(cards) {
     const owned = moxfieldNames.has(card.name.toLowerCase());
     const edhrec = card.edhrec_rank ? card.edhrec_rank : "";
     const usd = prices.usd ? "$" + prices.usd : "";
+    // Use card image_uris.large if available, else fallback to normal or small
+    let img = card.image_uris?.large || card.image_uris?.normal || card.image_uris?.small || "";
     const row = `
-      <tr${owned ? ' class="owned-row"' : ''}>
+      <tr${owned ? ' class="owned-row"' : ''} data-card-image="${img}">
         <td>${card.set.toUpperCase()}</td>
         <td>${card.collector_number}</td>
         <td><a href="${card.scryfall_uri}" target="_blank">${card.name}</a></td>
@@ -165,6 +168,33 @@ function renderTable(cards) {
     tbody.append(row);
   });
 }
+
+// Card image tooltip logic
+if (!document.getElementById('card-image-tooltip')) {
+  $(document.body).append('<img id="card-image-tooltip" class="card-image-tooltip" src="" alt="Card image" />');
+}
+
+$(document).on('mouseenter', '#resultsTable tbody tr', function (e) {
+  const img = $(this).data('card-image');
+  if (img) {
+    $('#card-image-tooltip').attr('src', img).show();
+  }
+});
+
+$(document).on('mousemove', '#resultsTable tbody tr', function (e) {
+  const tooltip = $('#card-image-tooltip');
+  if (tooltip.is(':visible')) {
+    // Offset so it doesn't cover the cursor
+    tooltip.css({
+      left: e.pageX + 24,
+      top: e.pageY - 40
+    });
+  }
+});
+
+$(document).on('mouseleave', '#resultsTable tbody tr', function () {
+  $('#card-image-tooltip').hide();
+});
 
 // Convert {U}{B}{R} → images
 function parseManaCost(cost) {

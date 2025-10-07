@@ -1,3 +1,16 @@
+/* Card image tooltip */
+.card-image-tooltip {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  border: 2px solid #333;
+  background: #111;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px #000a;
+  max-width: 220px;
+  max-height: 310px;
+}
 .sortable#sort-edhrec, .sortable#sort-edhrec span {
   min-width: 70px;
   white-space: nowrap;
