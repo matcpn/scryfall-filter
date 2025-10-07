@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scryfall Collection Filter</title>
+  <title>Scryfall Collection Viewer</title>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <link rel="stylesheet" href="https://cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css">
   <script src="https://cdn.datatables.net/2.0.3/js/dataTables.min.js"></script>
@@ -12,7 +12,6 @@
     body {
       font-family: system-ui, sans-serif;
       background: #f4f4f4;
-      color: #333;
       padding: 2em;
       display: flex;
       flex-direction: column;
@@ -26,10 +25,16 @@
       width: 100%;
       max-width: 1100px;
     }
+    h1 { text-align: center; }
+    textarea {
+      width: 100%;
+      height: 4em;
+      font-size: 1em;
+      margin-bottom: 1em;
+    }
     button {
-      margin-top: 1em;
-      padding: 0.5em 1em;
-      font-weight: bold;
+      margin: 0.5em 0;
+      padding: 0.6em 1em;
       background: #3b82f6;
       color: white;
       border: none;
@@ -37,30 +42,21 @@
       cursor: pointer;
     }
     button:hover { background: #2563eb; }
-    table {
-      margin-top: 2em;
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 0.5em 0.75em;
-      text-align: left;
-    }
-    tr:nth-child(even) { background-color: #fafafa; }
-    th {
-      background-color: #3b82f6;
-      color: white;
-    }
-    #status { margin-top: 1em; }
+    #status { margin-top: 1em; text-align: center; }
+    table { width: 100%; margin-top: 2em; }
+    th, td { padding: 0.5em 0.75em; }
+    tr:nth-child(even) { background: #fafafa; }
+    th { background-color: #3b82f6; color: white; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Scryfall ↔ Moxfield Filter</h1>
-    <p>Upload your Scryfall and Moxfield CSVs to display your owned cards.</p>
-    <input type="file" id="scryfallFile" accept=".csv" /><br />
-    <input type="file" id="moxfieldFile" accept=".csv" /><br />
-    <button id="processBtn">Show Owned Cards</button>
+    <h1>Scryfall → Moxfield Viewer</h1>
+
+    <p>Enter a <strong>Scryfall query</strong> (e.g. <code>c=U (game:paper) -otag:tutor not:gamechanger (t:instant or t:sorcery)</code>)</p>
+    <textarea id="queryInput" placeholder="Enter your Scryfall query here..."></textarea>
+    <input type="file" id="moxfieldFile" accept=".csv" />
+    <button id="fetchBtn">Fetch Cards</button>
     <p id="status"></p>
 
     <table id="cardsTable" class="display" style="display:none;">
@@ -72,7 +68,6 @@
           <th>COST</th>
           <th>TYPE</th>
           <th>R</th>
-          <th>LA</th>
           <th>ARTIST</th>
           <th>USD</th>
           <th>EUR</th>
@@ -84,4 +79,3 @@
   </div>
 </body>
 </html>
-
