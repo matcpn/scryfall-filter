@@ -2,80 +2,55 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scryfall Collection Viewer</title>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css">
-  <script src="https://cdn.datatables.net/2.0.3/js/dataTables.min.js"></script>
-  <script defer src="script.js"></script>
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #f4f4f4;
-      padding: 2em;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .container {
-      background: white;
-      padding: 2em;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 1100px;
-    }
-    h1 { text-align: center; }
-    textarea {
-      width: 100%;
-      height: 4em;
-      font-size: 1em;
-      margin-bottom: 1em;
-    }
-    button {
-      margin: 0.5em 0;
-      padding: 0.6em 1em;
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    button:hover { background: #2563eb; }
-    #status { margin-top: 1em; text-align: center; }
-    table { width: 100%; margin-top: 2em; }
-    th, td { padding: 0.5em 0.75em; }
-    tr:nth-child(even) { background: #fafafa; }
-    th { background-color: #3b82f6; color: white; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scryfall Query Browser</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <link rel="stylesheet" href="https://svgs.scryfall.io/css/scryfall-mana.css">
 </head>
 <body>
   <div class="container">
-    <h1>Scryfall → Moxfield Viewer</h1>
+    <h1>Scryfall Query Browser</h1>
 
-    <p>Enter a <strong>Scryfall query</strong> (e.g. <code>c=U (game:paper) -otag:tutor not:gamechanger (t:instant or t:sorcery)</code>)</p>
-    <textarea id="queryInput" placeholder="Enter your Scryfall query here..."></textarea>
-    <input type="file" id="moxfieldFile" accept=".csv" />
-    <button id="fetchBtn">Fetch Cards</button>
-    <p id="status"></p>
+    <form id="searchForm">
+      <input
+        type="text"
+        id="query"
+        placeholder='e.g. c=U (game:paper) -otag:tutor not:gamechanger (t:instant or t:sorcery)'
+        required
+      />
+      <button type="submit">Search</button>
+    </form>
 
-    <table id="cardsTable" class="display" style="display:none;">
-      <thead>
-        <tr>
-          <th>SET</th>
-          <th>№</th>
-          <th>NAME</th>
-          <th>COST</th>
-          <th>TYPE</th>
-          <th>R</th>
-          <th>ARTIST</th>
-          <th>USD</th>
-          <th>EUR</th>
-          <th>TIX</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div id="csvUploadSection">
+      <label for="csvFile" class="upload-label">Upload Moxfield CSV:</label>
+      <input type="file" id="csvFile" accept=".csv" />
+      <button id="applyFilter" disabled>Filter Results</button>
+    </div>
+
+    <div id="loading" style="display: none;">Loading...</div>
+
+    <div class="table-container">
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>Set</th>
+            <th>#</th>
+            <th>Name</th>
+            <th>Cost</th>
+            <th>Type</th>
+            <th>R</th>
+            <th>USD</th>
+            <th>EUR</th>
+            <th>TIX</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
