@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scryfall Collection Filter</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script defer src="script.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f4f4f4;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2em;
+    }
+    .container {
+      background: white;
+      padding: 2em;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 500px;
+    }
+    input {
+      margin: 0.5em 0;
+    }
+    button {
+      margin-top: 1em;
+      padding: 0.5em 1em;
+      font-weight: bold;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover { background: #2563eb; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Scryfall ↔ Moxfield Filter</h1>
+    <p>Upload your <strong>Scryfall export</strong> and <strong>Moxfield collection</strong> CSVs.</p>
+    <input type="file" id="scryfallFile" accept=".csv" /><br />
+    <input type="file" id="moxfieldFile" accept=".csv" /><br />
+    <button id="processBtn">Generate Filtered CSV</button>
+    <p id="status"></p>
+  </div>
+</body>
+</html>
