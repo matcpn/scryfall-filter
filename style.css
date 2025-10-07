@@ -1,3 +1,30 @@
+/* Responsive export bar for mobile */
+@media (max-width: 600px) {
+  #exportSection {
+    min-width: unset !important;
+    width: 98vw !important;
+    left: 1vw !important;
+    transform: none !important;
+    padding: 0.7rem 0.5rem !important;
+    border-radius: 10px !important;
+  }
+  #exportSection > div {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.6rem !important;
+  }
+  #copyCardsLabel {
+    text-align: center;
+    font-size: 1rem !important;
+    margin-bottom: 0.2rem;
+  }
+  #tcgplayerExport, #moxfieldExport {
+    width: 100%;
+    font-size: 1rem !important;
+    padding: 0.7rem 0 !important;
+    margin: 0 !important;
+  }
+}
 /* Card image tooltip */
 .card-image-tooltip {
   display: none;
@@ -8,8 +35,17 @@
   background: #111;
   border-radius: 8px;
   box-shadow: 0 4px 16px #000a;
-  max-width: 220px;
-  max-height: 310px;
+  width: 220px;
+  height: 310px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.card-image-tooltip img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 .sortable#sort-edhrec, .sortable#sort-edhrec span {
   min-width: 70px;

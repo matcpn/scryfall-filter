@@ -140,21 +140,22 @@ function renderTable(cards) {
   tbody.empty();
 
   if (cards.length === 0) {
-    tbody.append(`<tr><td colspan="10">No results found.</td></tr>`);
+    tbody.append(`<tr><td colspan="11">No results found.</td></tr>`);
+    $("#exportSection").hide();
     return;
   }
 
-  cards.forEach((card) => {
+  cards.forEach((card, idx) => {
     if (!card.edhrec_rank) return; // skip cards with blank edhrec_rank
     const prices = card.prices || {};
     const manaHTML = parseManaCost(card.mana_cost);
     const owned = moxfieldNames.has(card.name.toLowerCase());
     const edhrec = card.edhrec_rank ? card.edhrec_rank : "";
     const usd = prices.usd ? "$" + prices.usd : "";
-    // Use card image_uris.large if available, else fallback to normal or small
     let img = card.image_uris?.large || card.image_uris?.normal || card.image_uris?.small || "";
     const row = `
       <tr${owned ? ' class="owned-row"' : ''} data-card-image="${img}">
+        <td><input type="checkbox" class="select-card" data-idx="${idx}"></td>
         <td>${card.set.toUpperCase()}</td>
         <td>${card.collector_number}</td>
         <td><a href="${card.scryfall_uri}" target="_blank">${card.name}</a></td>
@@ -167,33 +168,133 @@ function renderTable(cards) {
       </tr>`;
     tbody.append(row);
   });
+  // Always update button count after rendering
+  updateTcgplayerButtonCount();
 }
 
-// Card image tooltip logic
-if (!document.getElementById('card-image-tooltip')) {
-  $(document.body).append('<img id="card-image-tooltip" class="card-image-tooltip" src="" alt="Card image" />');
+// Update export section label, enable/disable buttons, and show/hide bar
+function updateTcgplayerButtonCount() {
+  setTimeout(() => {
+    const count = $('#resultsTable .select-card:checked').length;
+    const label = $('#copyCardsLabel');
+    const tcgBtn = $('#tcgplayerExport');
+    const moxBtn = $('#moxfieldExport');
+    if (count > 0) {
+      $('#exportSection').show();
+      label.text(`Copied ${count} card${count > 1 ? 's' : ''} to clipboard. Paste them into one of the following:`);
+      tcgBtn.prop('disabled', false);
+      moxBtn.prop('disabled', false);
+    } else {
+      $('#exportSection').hide();
+      label.text('Copy selected cards to export:');
+      tcgBtn.prop('disabled', true);
+      moxBtn.prop('disabled', true);
+    }
+  }, 0);
 }
+
+// Select all checkbox
+$(document).on('change', '#selectAllCards', function() {
+  const checked = $(this).is(':checked');
+  $('#resultsTable .select-card').prop('checked', checked);
+  updateTcgplayerButtonCount();
+});
+
+// Uncheck select all if any are unchecked, and update count
+$(document).on('change', '.select-card', function() {
+  if (!$(this).is(':checked')) {
+    $('#selectAllCards').prop('checked', false);
+  }
+  updateTcgplayerButtonCount();
+});
+
+// Also update button count after sorting (since checkboxes are re-rendered)
+$(document).on('click', '#sort-edhrec, #sort-usd', function() {
+  setTimeout(updateTcgplayerButtonCount, 0);
+});
+
+
+// TCGplayer export button
+$(document).on('click', '#tcgplayerExport', function() {
+  const selected = [];
+  $('#resultsTable .select-card:checked').each(function() {
+    const idx = $(this).data('idx');
+    const card = allCards[idx];
+    if (card && card.name) {
+      selected.push("1 " + card.name);
+    }
+  });
+  if (selected.length === 0) {
+    alert('No cards selected!');
+    return;
+  }
+  const cardList = selected.join("\n");
+  navigator.clipboard.writeText(cardList).then(() => {
+    window.open('https://www.tcgplayer.com/massentry', '_blank');
+  }, () => {
+    window.open('https://www.tcgplayer.com/massentry', '_blank');
+    alert('Selected card names could not be copied automatically. Please copy them manually.\n' + cardList);
+  });
+});
+
+// Moxfield export button
+$(document).on('click', '#moxfieldExport', function() {
+  const selected = [];
+  $('#resultsTable .select-card:checked').each(function() {
+    const idx = $(this).data('idx');
+    const card = allCards[idx];
+    if (card && card.name) {
+      selected.push("1 " + card.name);
+    }
+  });
+  if (selected.length === 0) {
+    alert('No cards selected!');
+    return;
+  }
+  const cardList = selected.join("\n");
+  navigator.clipboard.writeText(cardList).then(() => {
+    window.open('https://www.moxfield.com/decks/personal', '_blank');
+  }, () => {
+    window.open('https://www.moxfield.com/decks/personal', '_blank');
+    alert('Selected card names could not be copied automatically. Please copy them manually.\n' + cardList);
+  });
+});
+
+// Card image tooltip logic
+
+if (!document.getElementById('card-image-tooltip')) {
+  $(document.body).append('<div id="card-image-tooltip" class="card-image-tooltip"><img src="" alt="Card image" /></div>');
+}
+
+let tooltipActive = false;
+let tooltipImg = '';
 
 $(document).on('mouseenter', '#resultsTable tbody tr', function (e) {
   const img = $(this).data('card-image');
   if (img) {
-    $('#card-image-tooltip').attr('src', img).show();
-  }
-});
-
-$(document).on('mousemove', '#resultsTable tbody tr', function (e) {
-  const tooltip = $('#card-image-tooltip');
-  if (tooltip.is(':visible')) {
-    // Offset so it doesn't cover the cursor
-    tooltip.css({
-      left: e.pageX + 24,
-      top: e.pageY - 40
-    });
+    tooltipActive = true;
+    tooltipImg = img;
+    const tooltip = $('#card-image-tooltip');
+    tooltip.find('img').attr('src', img);
+    tooltip.css('display', 'flex');
   }
 });
 
 $(document).on('mouseleave', '#resultsTable tbody tr', function () {
-  $('#card-image-tooltip').hide();
+  tooltipActive = false;
+  $('#card-image-tooltip').css('display', 'none');
+});
+
+$(document).on('mousemove', function (e) {
+  if (tooltipActive && tooltipImg) {
+    const tooltip = $('#card-image-tooltip');
+    // Always anchor to mouse position, no clamping
+    tooltip.css({
+      display: 'flex',
+      left: e.pageX + 24,
+      top: e.clientY + 10
+    });
+  }
 });
 
 // Convert {U}{B}{R} → images
